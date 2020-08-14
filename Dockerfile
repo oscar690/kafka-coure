@@ -1,27 +1,17 @@
-# Kafka and Zookeeper
+RUN pip install --no-cache-dir notebook==5.*
+FROM bitnami/kafka:2.5.0
+ARG NB_UID=1000
+ENV USER ${NB_USER}
+ENV NB_UID ${NB_UID}
+ENV HOME /home/${NB_USER}
 
-FROM java:openjdk-8-jre
+RUN adduser --disabled-password \
+    --gecos "Default user" \
+    --uid ${NB_UID} \
+    ${NB_USER}
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV SCALA_VERSION 2.11
-ENV KAFKA_VERSION 0.10.1.0
-ENV KAFKA_HOME /opt/kafka_"$SCALA_VERSION"-"$KAFKA_VERSION"
-
-# Install Kafka, Zookeeper and other needed things
-RUN apt-get update && \
-    apt-get install -y zookeeper wget supervisor dnsutils && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get clean && \
-    wget -q http://apache.mirrors.spacedump.net/kafka/"$KAFKA_VERSION"/kafka_"$SCALA_VERSION"-"$KAFKA_VERSION".tgz -O /tmp/kafka_"$SCALA_VERSION"-"$KAFKA_VERSION".tgz && \
-    tar xfz /tmp/kafka_"$SCALA_VERSION"-"$KAFKA_VERSION".tgz -C /opt && \
-    rm /tmp/kafka_"$SCALA_VERSION"-"$KAFKA_VERSION".tgz
-
-ADD scripts/start-kafka.sh /usr/bin/start-kafka.sh
-
-# Supervisor config
-ADD supervisor/kafka.conf supervisor/zookeeper.conf /etc/supervisor/conf.d/
-
-# 2181 is zookeeper, 9092 is kafka
-EXPOSE 2181 9092
-
-CMD ["supervisord", "-n"]
+# Make sure the contents of our repo are in ${HOME}
+COPY . ${HOME}
+USER root
+RUN chown -R ${NB_UID} ${HOME}
+USER ${NB_USER}
