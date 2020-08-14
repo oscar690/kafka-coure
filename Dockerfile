@@ -1,1 +1,0 @@
-FROM bitnami/kafka:2.5.0
